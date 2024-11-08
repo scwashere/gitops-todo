@@ -1,0 +1,12 @@
+services:
+    todo-database:
+        image: postgres:latest
+        container_name: todo-database
+        environment:
+            POSTGRES_USER: todo_user
+            POSTGRES_PASSWORD: todo_password
+            POSTGRES_DB: todo_db
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./init-tododb:/docker-entrypoint-initdb.d/
