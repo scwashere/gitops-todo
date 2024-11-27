@@ -1,6 +1,7 @@
 pipeline {
-    agent any
-
+    agent {
+        label 'docker'
+    }
     environment {
         DOCKER_IMAGE = "dhinojosa/gitops-todo"
         CONFIG_REPO = "https://github.com/dhinojosa/gitops-todo-config.git"
