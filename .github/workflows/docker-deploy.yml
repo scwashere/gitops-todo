@@ -1,0 +1,74 @@
+name: Build and Deploy Docker Image
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    build-and-push:
+        runs-on: ubuntu-latest
+
+        steps:
+            # Step 1: Checkout the code
+            - name: Checkout source repository
+              uses: actions/checkout@v3
+
+            # Step 2: Log in to Docker Hub
+            - name: Log in to Docker Hub
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ secrets.DOCKER_HUB_USERNAME }}
+                  password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+            # Step 3: Build the Docker image
+            - name: Build Docker image
+              run: |
+                  IMAGE_NAME="your-dockerhub-username/gitops-todo"
+                  VERSION=$(date +'%Y.%m.%d.%H%M%S') # Version based on timestamp
+                  docker build -t $IMAGE_NAME:$VERSION .
+                  echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+            # Step 4: Push the Docker image
+            - name: Push Docker image to Docker Hub
+              run: |
+                  IMAGE_NAME="your-dockerhub-username/gitops-todo"
+                  docker push $IMAGE_NAME:${{ env.VERSION }}
+
+    update-config:
+        needs: build-and-push
+        runs-on: ubuntu-latest
+
+        steps:
+            # Step 1: Checkout the config repository
+            - name: Checkout gitops-todo-config repository
+              uses: actions/checkout@v3
+              with:
+                  repository: dhinojosa/gitops-todo-config
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  path: gitops-todo-config
+
+            # Step 2: Update the image version in the Kubernetes configuration
+            - name: Update image version
+              run: |
+                  CONFIG_FILE="gitops-todo-config/deployment.yaml"
+                  IMAGE_NAME="your-dockerhub-username/gitops-todo"
+                  sed -i "s|image: $IMAGE_NAME:.*|image: $IMAGE_NAME:${{ env.VERSION }}|g" $CONFIG_FILE
+
+            # Step 3: Commit and push the changes
+            - name: Commit and push changes
+              run: |
+                  cd gitops-todo-config
+                  git config user.name "GitHub Actions"
+                  git config user.email "actions@github.com"
+                  git add deployment.yaml
+                  git commit -m "Update image version to ${{ env.VERSION }}"
+                  git push
+
+    notify-success:
+        needs: update-config
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Success Message
+              run: echo "Docker image built and deployed successfully. Configuration updated in gitops-todo-config."
