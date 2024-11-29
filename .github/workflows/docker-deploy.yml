@@ -48,7 +48,13 @@ jobs:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   ref: main
 
-            # Step 2: Update the image version in the Kubernetes configuration
+            # Step 2: Show before of the patch-deployment.yaml
+            - name: Debug View patch file before changes
+              run: |
+                  echo "Contents of patch-deployment.yaml after update:"
+                  cat overlays/staging/patch-deployment.yaml
+
+            # Step 3: Update the image version in the Kubernetes configuration
             - name: Update image version in staging patch
               run: |
                   PATCH_FILE="overlays/staging/patch-deployment.yaml"
@@ -58,7 +64,13 @@ jobs:
                   fi
                   sed -i "s|image: .*|image: dhinojosa/gitops-todo:${{ env.VERSION }}|g" $PATCH_FILE
 
-            # Step 3: Commit and push the changes
+            # Step 4: Show after of the patch-deployment.yaml
+            -   name: Debug View patch file after changes
+                run: |
+                    echo "Contents of patch-deployment.yaml after update:"
+                    cat overlays/staging/patch-deployment.yaml
+
+            # Step 5: Commit and push the changes
             - name: Commit and push changes
               run: |
                   git config user.name "GitHub Actions"
