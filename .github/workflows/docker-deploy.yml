@@ -63,7 +63,6 @@ jobs:
             # Step 3: Commit and push the changes
             - name: Commit and push changes
               run: |
-                    cd gitops-todo-config
                     git config user.name "GitHub Actions"
                     git config user.email "actions@github.com"
                     git add deployment.yaml
