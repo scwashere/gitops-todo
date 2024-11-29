@@ -49,11 +49,14 @@ jobs:
                   path: gitops-todo-config
 
             # Step 2: Update the image version in the Kubernetes configuration
-            - name: Update image version
-              run: |
-                  CONFIG_FILE="gitops-todo-config/deployment.yaml"
-                  IMAGE_NAME="dhinojosa/gitops-todo"
-                  sed -i "s|image: $IMAGE_NAME:.*|image: $IMAGE_NAME:${{ env.VERSION }}|g" $CONFIG_FILE
+            -   name: Update image version in staging patch
+                run: |
+                    PATCH_FILE="overlays/staging/patch-deployment.yaml"
+                    if [ ! -f "$PATCH_FILE" ]; then
+                      echo "Error: Staging patch file does not exist."
+                      exit 1
+                    fi
+                    sed -i "s|image: .*|image: your-dockerhub-username/gitops-todo:${{ env.VERSION }}|g" $PATCH_FILE
 
             # Step 3: Commit and push the changes
             - name: Commit and push changes
