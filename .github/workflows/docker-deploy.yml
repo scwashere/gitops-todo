@@ -9,6 +9,9 @@ jobs:
     build-and-push:
         runs-on: ubuntu-latest
 
+        outputs:
+            version: ${{ steps.set-version.outputs.version }}
+
         steps:
             # Step 1: Checkout the code
             - name: Checkout source repository
@@ -23,17 +26,18 @@ jobs:
 
             # Step 3: Build the Docker image
             - name: Build Docker image
+              id: set-version
               run: |
                   IMAGE_NAME="dhinojosa/gitops-todo"
                   VERSION=$(date +'%Y.%m.%d.%H%M%S') # Version based on timestamp
                   docker build -t $IMAGE_NAME:$VERSION .
-                  echo "VERSION=$VERSION" >> $GITHUB_ENV
+                  echo "::set-output name=version::$VERSION"
 
             # Step 4: Push the Docker image
             - name: Push Docker image to Docker Hub
               run: |
                   IMAGE_NAME="dhinojosa/gitops-todo"
-                  docker push $IMAGE_NAME:${{ env.VERSION }}
+                  docker push $IMAGE_NAME:${{ steps.set-version.outputs.version }}
 
     update-config:
         needs: build-and-push
@@ -48,10 +52,10 @@ jobs:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   ref: main
 
-            # Step 2: Show before of the patch-deployment.yaml
+            # Step 2: Debug View patch file before changes
             - name: Debug View patch file before changes
               run: |
-                  echo "Contents of patch-deployment.yaml after update:"
+                  echo "Contents of patch-deployment.yaml before update:"
                   cat overlays/staging/patch-deployment.yaml
 
             # Step 3: Update the image version in the Kubernetes configuration
@@ -62,13 +66,13 @@ jobs:
                     echo "Error: Staging patch file does not exist."
                     exit 1
                   fi
-                  sed -i "s|image: .*|image: dhinojosa/gitops-todo:${{ env.VERSION }}|g" $PATCH_FILE
+                  sed -i "s|image: .*|image: dhinojosa/gitops-todo:${{ needs.build-and-push.outputs.version }}|g" $PATCH_FILE
 
-            # Step 4: Show after of the patch-deployment.yaml
-            -   name: Debug View patch file after changes
-                run: |
-                    echo "Contents of patch-deployment.yaml after update:"
-                    cat overlays/staging/patch-deployment.yaml
+            # Step 4: Debug View patch file after changes
+            - name: Debug View patch file after changes
+              run: |
+                  echo "Contents of patch-deployment.yaml after update:"
+                  cat overlays/staging/patch-deployment.yaml
 
             # Step 5: Commit and push the changes
             - name: Commit and push changes
@@ -76,7 +80,7 @@ jobs:
                   git config user.name "GitHub Actions"
                   git config user.email "actions@github.com"
                   git add overlays/staging/patch-deployment.yaml
-                  git commit -m "Update image version to ${{ env.VERSION }} for staging"
+                  git commit -m "Update image version to ${{ needs.build-and-push.outputs.version }} for staging"
                   git push
 
     notify-success:
