@@ -44,9 +44,9 @@ jobs:
             - name: Checkout gitops-todo-config repository
               uses: actions/checkout@v3
               with:
-                  repository: dhinojosa/gitops-todo-config
-                  token: ${{ secrets.GITHUB_TOKEN }}
-                  path: gitops-todo-config
+                    repository: dhinojosa/gitops-todo-config
+                    token: ${{ secrets.GITHUB_TOKEN }}
+                    path: gitops-todo-config
 
             # Step 2: Update the image version in the Kubernetes configuration
             -   name: Update image version in staging patch
@@ -61,12 +61,12 @@ jobs:
             # Step 3: Commit and push the changes
             - name: Commit and push changes
               run: |
-                  cd gitops-todo-config
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
-                  git add deployment.yaml
-                  git commit -m "Update image version to ${{ env.VERSION }}"
-                  git push
+                    cd gitops-todo-config
+                    git config user.name "GitHub Actions"
+                    git config user.email "actions@github.com"
+                    git add deployment.yaml
+                    git commit -m "Update image version to ${{ env.VERSION }}"
+                    git push
 
     notify-success:
         needs: update-config
