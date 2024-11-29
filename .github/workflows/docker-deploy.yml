@@ -74,14 +74,16 @@ jobs:
                   echo "Contents of patch-deployment.yaml after update:"
                   cat overlays/staging/patch-deployment.yaml
 
-            # Step 5: Commit and push the changes
-            - name: Commit and push changes
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "actions@github.com"
-                  git add overlays/staging/patch-deployment.yaml
-                  git commit -m "Update image version to ${{ needs.build-and-push.outputs.version }} for staging"
-                  git push
+                  # Step 5: Commit and push the changes
+                  - name: Commit and push changes
+                    env:
+                        TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    run: |
+                        git config user.name "GitHub Actions"
+                        git config user.email "actions@github.com"
+                        git add overlays/staging/patch-deployment.yaml
+                        git commit -m "Update image version to ${{ needs.build-and-push.outputs.version }} for staging" || echo "No changes to commit"
+                        git push https://x-access-token:${TOKEN}@github.com/dhinojosa/gitops-todo-config.git HEAD:main
 
     notify-success:
         needs: update-config
