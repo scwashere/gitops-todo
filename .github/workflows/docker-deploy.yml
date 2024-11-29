@@ -44,30 +44,28 @@ jobs:
             - name: Checkout gitops-todo-config repository
               uses: actions/checkout@v3
               with:
-                    repository: dhinojosa/gitops-todo-config
-                    token: ${{ secrets.GITHUB_TOKEN }}
-                    ref: main
-                    path: .
-
+                  repository: dhinojosa/gitops-todo-config
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  ref: main
 
             # Step 2: Update the image version in the Kubernetes configuration
-            -   name: Update image version in staging patch
-                run: |
-                    PATCH_FILE="overlays/staging/patch-deployment.yaml"
-                    if [ ! -f "$PATCH_FILE" ]; then
-                      echo "Error: Staging patch file does not exist."
-                      exit 1
-                    fi
-                    sed -i "s|image: .*|image: your-dockerhub-username/gitops-todo:${{ env.VERSION }}|g" $PATCH_FILE
+            - name: Update image version in staging patch
+              run: |
+                  PATCH_FILE="overlays/staging/patch-deployment.yaml"
+                  if [ ! -f "$PATCH_FILE" ]; then
+                    echo "Error: Staging patch file does not exist."
+                    exit 1
+                  fi
+                  sed -i "s|image: .*|image: dhinojosa/gitops-todo:${{ env.VERSION }}|g" $PATCH_FILE
 
             # Step 3: Commit and push the changes
             - name: Commit and push changes
               run: |
-                    git config user.name "GitHub Actions"
-                    git config user.email "actions@github.com"
-                    git add deployment.yaml
-                    git commit -m "Update image version to ${{ env.VERSION }}"
-                    git push
+                  git config user.name "GitHub Actions"
+                  git config user.email "actions@github.com"
+                  git add overlays/staging/patch-deployment.yaml
+                  git commit -m "Update image version to ${{ env.VERSION }} for staging"
+                  git push
 
     notify-success:
         needs: update-config
